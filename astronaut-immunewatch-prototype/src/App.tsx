@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import SpaceAssistant from "./SpaceAssistant";
 
 type Astronaut = {
   id: string
@@ -49,6 +50,7 @@ const navItems = [
   ['Astronauts', '♙'],
   ['Test Results', '▤'],
   ['Trends', '⌁'],
+  ['Radiation & Health', '☢'],
   ['Alert Center', '⚑'],
   ['Daily Check-in', '＋'],
   ['Audit Log', '≡'],
@@ -308,6 +310,30 @@ export default function App() {
           <p className="chart-note">Prototype audit entries are session-only and are not a persistent security-grade audit trail.</p>
         </div>
 
+      case 'Radiation & Health':
+        return <div className="panel">
+          <PanelTitle title="Radiation & Health Relationship" subtitle="Two separate curves: general health indicators and latent-virus tests" />
+          <div className="info-box"><strong>Prototype demonstration only</strong><p>All values below are synthetic. The charts explore possible patterns; they do not prove that radiation caused a health change, and this is not a clinical prediction.</p></div>
+          <div className="two-column">
+            <div className="panel">
+              <PanelTitle title="1. Cumulative radiation" subtitle="Accumulated exposure during the mission" />
+              <RadiationHealthChart />
+            </div>
+            <div className="panel">
+              <PanelTitle title="2. Latent-virus timeline" subtitle="Pre-flight baseline and repeated follow-up tests" />
+              <ViralMonitoringChart />
+            </div>
+          </div>
+          <div className="panel">
+            <PanelTitle title="3. General biomarkers" subtitle="Illustrative temperature, blood-pressure, and blood-marker trends" />
+            <BiomarkersChart />
+          </div>
+          <RadiationCorrelationSummary />
+          <div className="limitation-row"><span>01</span><p>Before a real analysis, measurements need validated units, dates, sample methods, and enough observations for each astronaut.</p></div>
+          <div className="limitation-row"><span>02</span><p>A relationship may be linear, non-linear, weak, or absent. The prototype must report what the data show rather than assume a relationship.</p></div>
+          <div className="limitation-row"><span>03</span><p>Latent-virus reactivation and infection are not interchangeable; a positive test alone does not establish an infection.</p></div>
+        </div>
+
       case 'Limitations':
         return <div className="panel">
           <PanelTitle title="Scientific limitations" subtitle="Important boundaries of this prototype" />
@@ -345,6 +371,7 @@ export default function App() {
           {notice && <div className="notice"><span>✓</span><p>{notice}</p><button onClick={() => setNotice('')}>×</button></div>}
           {renderPage()}
         </section>
+        <SpaceAssistant />
         <footer>ASTRONAUT IMMUNEWATCH <span>•</span> LOCAL PROTOTYPE <span>•</span> NOT FOR CLINICAL USE</footer>
       </main>
     </div>
@@ -384,6 +411,87 @@ function TrendChart({ data }: { data: Result[] }) {
   }).join(' ')
 
   return <div className="chart-container"><div className="chart-y-labels"><span>{max.toFixed(1)}</span><span>{((max + min) / 2).toFixed(1)}</span><span>{min.toFixed(1)}</span></div><svg className="trend-chart" viewBox="0 0 600 210" preserveAspectRatio="none" role="img" aria-label="Synthetic measurement trend">{[30, 102, 175].map(y => <line key={y} x1="20" y1={y} x2="580" y2={y} stroke="#e7edf5" strokeDasharray="5 5" />)}{sorted.length > 1 && <polyline points={points} fill="none" stroke="#2585e8" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />}{points.split(' ').map((point, i) => { const [x, y] = point.split(','); return <circle key={sorted[i].id} cx={x} cy={y} r="5" fill="#fff" stroke="#2585e8" strokeWidth="3"><title>{sorted[i].date}: {sorted[i].value}</title></circle> })}</svg><div className="chart-dates">{sorted.map(r => <span key={r.id}>{r.date.slice(5)}</span>)}</div></div>
+}
+
+function RadiationHealthChart() {
+  const rows = [
+    { date: 'Oct 01', radiation: 8, health: 92 },
+    { date: 'Oct 04', radiation: 15, health: 89 },
+    { date: 'Oct 07', radiation: 23, health: 87 },
+    { date: 'Oct 10', radiation: 31, health: 82 },
+    { date: 'Oct 13', radiation: 40, health: 79 },
+  ]
+  const points = rows.map((r, i) => `${35 + i * 130},${175 - (r.radiation / 45) * 140}`).join(' ')
+  const healthPoints = rows.map((r, i) => `${35 + i * 130},${175 - ((r.health - 65) / 35) * 140}`).join(' ')
+  return <>
+    <div className="filter-row"><span className="soft-badge">SYNTHETIC DATA</span><span className="muted">Radiation: cumulative units · Health: illustrative score</span></div>
+    <div className="chart-container"><svg className="trend-chart" viewBox="0 0 600 210" preserveAspectRatio="none" role="img" aria-label="Illustrative radiation and health trends">
+      {[30, 102, 175].map(y => <line key={y} x1="20" y1={y} x2="580" y2={y} stroke="#e7edf5" strokeDasharray="5 5" />)}
+      <polyline points={points} fill="none" stroke="#e58b35" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      <polyline points={healthPoints} fill="none" stroke="#2585e8" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      {rows.map((r, i) => <g key={r.date}><circle cx={35 + i * 130} cy={175 - (r.radiation / 45) * 140} r="4" fill="#e58b35"/><circle cx={35 + i * 130} cy={175 - ((r.health - 65) / 35) * 140} r="4" fill="#2585e8"/></g>)}
+    </svg><div className="chart-dates">{rows.map(r => <span key={r.date}>{r.date}</span>)}</div></div>
+    <div className="filter-row"><span><span style={{color:'#e58b35'}}>●</span> Cumulative radiation</span><span><span style={{color:'#2585e8'}}>●</span> Illustrative health score</span></div>
+  </>
+}
+
+function BiomarkersChart() {
+  const rows = [
+    { date: 'Oct 01', temperature: 36.7, pressure: 72, blood: 18 },
+    { date: 'Oct 04', temperature: 36.8, pressure: 74, blood: 20 },
+    { date: 'Oct 07', temperature: 37.0, pressure: 76, blood: 24 },
+    { date: 'Oct 10', temperature: 37.2, pressure: 80, blood: 29 },
+    { date: 'Oct 13', temperature: 37.4, pressure: 83, blood: 34 },
+  ]
+  // Normalize each illustrative series to a 0–100 display scale so different units can share one chart.
+  const series = [
+    { key: 'temperature', label: 'Temperature (°C)', color: '#2585e8' },
+    { key: 'pressure', label: 'Blood-pressure indicator', color: '#17a673' },
+    { key: 'blood', label: 'Blood-marker indicator', color: '#a16be0' },
+  ] as const
+  const linePoints = (key: typeof series[number]['key']) => {
+    const vals = rows.map(r => r[key])
+    const lo = Math.min(...vals), hi = Math.max(...vals)
+    return vals.map((v, i) => `${35 + i * 130},${175 - ((hi === lo ? 0.5 : (v - lo) / (hi - lo)) * 125)}`).join(' ')
+  }
+  return <>
+    <div className="filter-row"><span className="soft-badge">SYNTHETIC DATA</span><span className="muted">Each series is normalized for visual comparison; units are not interchangeable.</span></div>
+    <div className="chart-container"><svg className="trend-chart" viewBox="0 0 600 210" preserveAspectRatio="none" role="img" aria-label="Illustrative biomarker trends">
+      {[30, 102, 175].map(y => <line key={y} x1="20" y1={y} x2="580" y2={y} stroke="#e7edf5" strokeDasharray="5 5" />)}
+      {series.map(item => <g key={item.key}><polyline points={linePoints(item.key)} fill="none" stroke={item.color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />{rows.map((r, i) => { const point = linePoints(item.key).split(' ')[i].split(','); return <circle key={r.date} cx={point[0]} cy={point[1]} r="4" fill="#fff" stroke={item.color} strokeWidth="2"><title>{r.date}: {r[item.key]}</title></circle> })}</g>)}
+    </svg><div className="chart-dates">{rows.map(r => <span key={r.date}>{r.date}</span>)}</div></div>
+    <div className="filter-row">{series.map(item => <span key={item.key}><span style={{color:item.color}}>●</span> {item.label}</span>)}</div>
+    <p className="chart-note">Illustrative values only. In a real system, display each biomarker with its own units and reference range, and compare changes with time-aligned radiation measurements.</p>
+  </>
+}
+
+function ViralMonitoringChart() {
+  const tests = [
+    { date: 'Pre-flight', label: 'Negative', positive: false },
+    { date: 'Day 10', label: 'Negative', positive: false },
+    { date: 'Day 20', label: 'Detected', positive: true },
+    { date: 'Day 25', label: 'Follow-up', positive: true },
+  ]
+  return <div className="scenario-list">{tests.map((test, i) => <div className="scenario-item" key={test.date}>
+    <span className="scenario-icon">{test.positive ? '!' : '✓'}</span>
+    <span><strong>{test.date}</strong><small>Latent-virus test: {test.label}</small></span>
+    <span className={`status ${test.positive ? 'warning' : 'info'}`}>{test.positive ? 'Detected' : 'Negative'}</span>
+  </div>)}<p className="chart-note">Example timeline only. A detected viral marker requires appropriate interpretation and does not alone confirm infection.</p></div>
+}
+
+function RadiationCorrelationSummary() {
+  const radiation = [8, 15, 23, 31, 40]
+  const health = [92, 89, 87, 82, 79]
+  const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length
+  const mx = mean(radiation)
+  const my = mean(health)
+  const numerator = radiation.reduce((sum, value, i) => sum + (value - mx) * (health[i] - my), 0)
+  const denominator = Math.sqrt(radiation.reduce((sum, value) => sum + (value - mx) ** 2, 0) * health.reduce((sum, value) => sum + (value - my) ** 2, 0))
+  const r = denominator ? numerator / denominator : 0
+  return <div className="panel"><PanelTitle title="Exploratory relationship summary" subtitle="Calculated from the illustrative points shown above" />
+    <div className="stats-grid"><Stat icon="↗" label="Correlation (r)" value={r.toFixed(2)} note="Synthetic example only" /><Stat icon="☢" label="Radiation points" value={String(radiation.length)} note="Illustrative observations" /></div>
+    <p className="chart-note">The example shows a negative correlation between cumulative radiation and the illustrative health score. Correlation does not prove causation. No AI model is running yet; this is a simple statistical demonstration.</p>
+  </div>
 }
 
 function Empty({ text }: { text: string }) {
